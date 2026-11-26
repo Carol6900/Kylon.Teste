@@ -10,17 +10,39 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    container:
-      image: barichello/godot-ci:4.3.0
 
     steps:
       - name: Baixar projeto
         uses: actions/checkout@v4
 
-      - name: Extrair arquivos
+      - name: Configurar Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Configurar Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Instalar ferramentas Android
         run: |
-          apt-get update
-          apt-get install -y unzip
+          sdkmanager "platform-tools" "platforms;android-35" "build-tools;35.0.0"
+
+      - name: Baixar Godot 4.3
+        run: |
+          wget -q https://github.com/godotengine/godot/releases/download/4.3-stable/Godot_v4.3-stable_linux.x86_64.zip
+          unzip -q Godot_v4.3-stable_linux.x86_64.zip
+          chmod +x Godot_v4.3-stable_linux.x86_64
+          sudo mv Godot_v4.3-stable_linux.x86_64 /usr/local/bin/godot
+
+      - name: Instalar modelos de exportação
+        run: |
+          wget -q https://github.com/godotengine/godot/releases/download/4.3-stable/Godot_v4.3-stable_export_templates.tpz
+          mkdir -p ~/.local/share/godot/export_templates/4.3.stable
+          unzip -jo Godot_v4.3-stable_export_templates.tpz "templates/*" -d ~/.local/share/godot/export_templates/4.3.stable
+
+      - name: Extrair projeto
+        run: |
           unzip -o Kylon_Grecomancia_Projeto_Godot_0_3.zip
 
       - name: Gerar APK
@@ -35,3 +57,4 @@ jobs:
           name: Kylon-Grecomancia-APK
           path: Kylon_Grecomancia/build/Kylon_Grecomancia.apk
           if-no-files-found: error
+          
